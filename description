@@ -47,3 +47,19 @@ Business logic/Exception scenarios:
 The following requirements should be met:
 ●To claim the project is completed, the student must ensure that all the details, such as a list of posts, search results, and update or delete operations are present in a valid format.
 ●The student must perform all CRUD operations on the entire data.
+
+API Endpoints:
+Sr. No. ---- API ---- Endpoint
+1 ---- Retrieve available PG places in a specific city ---- http://localhost:8085/pg/{city_id}
+2 ---- List out available PG places in a specific locality ---- http://localhost:8085/pg/{locality}
+3 ---- Retrieve a specific PG place detail by id ---- http://localhost:8085/pg/details/{id}
+4 ---- Retrieve the owner details of a specific PG ---- http://localhost:8085/pg/owner/{id}
+5 ---- Add a new PG place ---- http://localhost:8085/owner/places/add
+6 ---- Retrieve all PG places added by the owner ---- http://localhost:8085/owner/places
+7 ---- Change the status of PG place (Available or Not Available) ---- http://localhost:8085/owner/places/{id}
+8 ---- Edit Place details ---- http://localhost:8085/owner/places/edit
+9 ---- Delete Place Details ---- http://localhost:8085/owner/places/delete
+
+Note:
+1.Do the APIs Functional Testing using Postman.
+2.Create the documentation for these APIs using Swagger.
