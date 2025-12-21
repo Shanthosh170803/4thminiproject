@@ -1,54 +1,72 @@
-===PgPlace.java===(inside src/main/java/com.pg.pgaccommodation.entity)
-package com.pg.pgaccommodation.entity;
- 
+===City.java===
+package com.pg.pg_accommodation.entity;
+
 import jakarta.persistence.*;
- 
+
 @Entity
-@Table(name = "pg_places")
-public class PgPlace {
- 
+@Table(name = "cities")
+public class City {
+
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
- 
-    private String pgName;
-    private String address;
- 
-    @ManyToOne
-    private City city;
- 
-    @ManyToOne
-    private Locality locality;
- 
-    @ManyToOne
-    private Owner owner;
- 
-    private int visitorCount = 0;
 
+    @Column(unique = true)
+    private String name;
+
+    // getters & setters
     public Long getId() {
         return id;
     }
- 
-    public String getPgName() {
-        return pgName;
+
+    public String getName() {
+        return name;
     }
- 
+
     public void setId(Long id) {
         this.id = id;
     }
     
-    public void setPgName(String pgName) {
-        this.pgName = pgName;
+    public void setName(String name) {
+        this.name = name;
     }
- 
-    public String getAddress() {
-        return address;
+}
+===Locality.java===
+package com.pg.pg_accommodation.entity;
+
+import jakarta.persistence.*;
+
+@Entity
+@Table(name = "localities")
+public class Locality {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    private String name;
+
+    @ManyToOne
+    @JoinColumn(name = "city_id")
+    private City city;
+
+    // getters & setters
+    public Long getId() {
+        return id;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
     }
     
-    public void setAddress(String address) {
-        this.address = address;
+    public void setName(String name) {
+        this.name = name;
     }
- 
+
     public City getCity() {
         return city;
     }
@@ -56,58 +74,1544 @@ public class PgPlace {
     public void setCity(City city) {
         this.city = city;
     }
- 
-    public Locality getLocality() {
-        return locality;
+}
+===Owner.java===
+package com.pg.pg_accommodation.entity;
+
+import jakarta.persistence.*;
+
+@Entity
+@Table(name = "owners")
+public class Owner {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    private String name;
+    private String phone;
+
+    @OneToOne
+    @JoinColumn(name = "user_id")
+    private User user;
+
+    // getters & setters
+    public Long getId() {
+        return id;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
     }
     
-    public void setLocality(Locality locality) {
-        this.locality = locality;
+    public void setName(String name) {
+        this.name = name;
     }
- 
-    public Owner getOwner() {
-        return owner;
+
+    public String getPhone() {
+        return phone;
     }
     
-    public void setOwner(Owner owner) {
-        this.owner = owner;
+    public void setPhone(String phone) {
+        this.phone = phone;
     }
- 
-    public int getVisitorCount() {
-        return visitorCount;
+
+    public User getUser() {
+        return user;
     }
- 
-    public void incrementVisitorCount() {
-        this.visitorCount++;
+    
+    public void setUser(User user) {
+        this.user = user;
     }
 }
 
-===PGPlaceServiceImpl.java===(inside src/main/java/com.pg.pgaccommodation.service.impl)
-	@Override
-	public Object getOwnerDetailsIfAvailable(long id) {
-		PgPlace pg = pgPlaceRepository.findById(id)
-                .orElseThrow(() ->
-                        new ResourceNotFoundException("PG Place not found"));
- 
-        if (!pg.isAvailable()) {
-            throw new PGNotAvailableException(
-                    "PG is occupied. Owner details cannot be shown");
-        }
- 
-        pg.incrementVisitorCount();
-        pgPlaceRepository.save(pg);
- 
-        return pg.getOwner();
+===PgPlace.java===
+package com.pg.pg_accommodation.entity;
+
+import jakarta.persistence.*;
+
+@Entity
+@Table(name = "pg_places")
+public class PgPlace {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    private String pgName;
+    private String address;
+
+    @ManyToOne
+    private City city;
+
+    @ManyToOne
+    private Locality locality;
+
+    @ManyToOne
+    private Owner owner;
+
+    @Enumerated(EnumType.STRING)
+    private RoomStatus roomStatus = RoomStatus.AVAILABLE;
+
+    private int visitorCount = 0;
+
+    /* ===== Getters & Setters ===== */
+
+    public Long getId() {
+        return id;
+    }
+
+    public String getPgName() {
+        return pgName;
+    }
+
+    public void setPgName(String pgName) {
+        this.pgName = pgName;
+    }
+
+    public String getAddress() {
+        return address;
+    }
+
+    public void setAddress(String address) {
+        this.address = address;
+    }
+
+    public City getCity() {
+        return city;
+    }
+
+    public void setCity(City city) {
+        this.city = city;
+    }
+
+    public Locality getLocality() {
+        return locality;
+    }
+
+    public void setLocality(Locality locality) {
+        this.locality = locality;
+    }
+
+    public Owner getOwner() {
+        return owner;
+    }
+
+    public void setOwner(Owner owner) {
+        this.owner = owner;
+    }
+
+    public int getVisitorCount() {
+        return visitorCount;
+    }
+
+    public void incrementVisitorCount() {
+        this.visitorCount++;
+    }
+
+    /* ===== BUSINESS METHODS ===== */
+
+    public boolean isAvailable() {
+        return this.roomStatus == RoomStatus.AVAILABLE;
+    }
+
+    public void toggleAvailability() {
+        this.roomStatus =
+                (this.roomStatus == RoomStatus.AVAILABLE)
+                        ? RoomStatus.OCCUPIED
+                        : RoomStatus.AVAILABLE;
+    }
+
+    public RoomStatus getRoomStatus() {
+        return roomStatus;
+    }
+}
+
+===Role.java===
+package com.pg.pg_accommodation.entity;
+
+public enum Role {
+    ADMIN,
+    OWNER,
+    TENANT
+}
+
+===Room.java===
+package com.pg.pg_accommodation.entity;
+
+import jakarta.persistence.*;
+
+@Entity
+@Table(name = "rooms")
+public class Room {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    private String roomNumber;
+
+    private double rent;
+
+    @Enumerated(EnumType.STRING)
+    private RoomStatus status = RoomStatus.AVAILABLE;
+
+    @ManyToOne
+    @JoinColumn(name = "pg_place_id")
+    private PgPlace pgPlace;
+
+	public Long getId() {
+		return id;
 	}
-===OwnerServiceImpl.java===(inside src/main/java/com.pg.pgaccommodation.service.impl)
+
+	public void setId(Long id) {
+		this.id = id;
+	}
+
+	public String getRoomNumber() {
+		return roomNumber;
+	}
+
+	public void setRoomNumber(String roomNumber) {
+		this.roomNumber = roomNumber;
+	}
+
+	public double getRent() {
+		return rent;
+	}
+
+	public void setRent(double rent) {
+		this.rent = rent;
+	}
+
+	public RoomStatus getStatus() {
+		return status;
+	}
+
+	public void setStatus(RoomStatus status) {
+		this.status = status;
+	}
+
+	public PgPlace getPgPlace() {
+		return pgPlace;
+	}
+
+	public void setPgPlace(PgPlace pgPlace) {
+		this.pgPlace = pgPlace;
+	}
+
+    // getters & setters
+    
+}
+
+===RoomStatus.java===
+package com.pg.pg_accommodation.entity;
+
+public enum RoomStatus {
+    AVAILABLE,
+    OCCUPIED
+}
+
+===Tenant.java===
+package com.pg.pg_accommodation.entity;
+
+import jakarta.persistence.*;
+import java.time.LocalDate;
+import java.time.Period;
+
+@Entity
+@Table(name = "tenants")
+public class Tenant {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    private String name;
+    private String phone;
+
+    private LocalDate dateOfBirth;
+
+    private int age;
+
+    @OneToOne
+    @JoinColumn(name = "user_id")
+    private User user;
+
+    @PrePersist
+    @PreUpdate
+    private void calculateAge() {
+        if (dateOfBirth != null) {
+            this.age = Period.between(dateOfBirth, LocalDate.now()).getYears();
+        }
+    }
+
+    // getters & setters
+    public Long getId() {
+        return id;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+    
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getPhone() {
+        return phone;
+    }
+    
+    public void setPhone(String phone) {
+        this.phone = phone;
+    }
+
+    public LocalDate getDateOfBirth() {
+        return dateOfBirth;
+    }
+    
+    public void setDateOfBirth(LocalDate dateOfBirth) {
+        this.dateOfBirth = dateOfBirth;
+    }
+
+    public int getAge() {
+        return age;
+    }
+
+    public User getUser() {
+        return user;
+    }
+    
+    public void setUser(User user) {
+        this.user = user;
+    }
+
+	public void setAge(int age) {
+		this.age = age;
+	}
+    
+}
+
+===User.java===
+package com.pg.pg_accommodation.entity;
+
+import jakarta.persistence.*;
+
+@Entity
+@Table(name = "users")
+public class User {
+
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
+
+    @Column(nullable = false, unique = true)
+    private String email;
+
+    @Column(nullable = false)
+    private String password;   // plain text (as per your choice)
+
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private Role role;
+
+    private boolean active = true;
+
+    // getters & setters
+    public Long getId() {
+        return id;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
+    }
+
+    public void setId(Long id) {
+        this.id = id;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+    
+    public void setPassword(String password) {
+        this.password = password;
+    }
+
+    public Role getRole() {
+        return role;
+    }
+    
+    public void setRole(Role role) {
+        this.role = role;
+    }
+
+    public boolean isActive() {
+        return active;
+    }
+    
+    public void setActive(boolean active) {
+        this.active = active;
+    }
+}
+
+===CityRepository.java===
+package com.pg.pg_accommodation.repository;
+
+import java.util.Optional;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+
+import com.pg.pg_accommodation.entity.City;
+
+public interface CityRepository extends JpaRepository<City, Long> {
+
+    Optional<City> findByName(String name);
+}
+
+===LocalityRepository.java===
+package com.pg.pg_accommodation.repository;
+
+import java.util.List;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+
+import com.pg.pg_accommodation.entity.Locality;
+
+public interface LocalityRepository extends JpaRepository<Locality, Long> {
+
+    List<Locality> findByNameContainingIgnoreCase(String name);
+}
+
+===OwnerRepository.java===
+package com.pg.pg_accommodation.repository;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+
+import com.pg.pg_accommodation.entity.Owner;
+
+public interface OwnerRepository extends JpaRepository<Owner, Long> {
+}
+
+===PgPlaceRepository.java===
+package com.pg.pg_accommodation.repository;
+
+import java.util.List;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+
+import com.pg.pg_accommodation.entity.City;
+import com.pg.pg_accommodation.entity.Locality;
+import com.pg.pg_accommodation.entity.PgPlace;
+import com.pg.pg_accommodation.entity.Owner;
+
+public interface PgPlaceRepository extends JpaRepository<PgPlace, Long> {
+
+    List<PgPlace> findByCity(City city);
+
+    List<PgPlace> findByLocality(Locality locality);
+
+    List<PgPlace> findByOwner(Owner owner);
+
+	List<PgPlace> findByCityId(Long cityId);
+
+	List<PgPlace> findByLocalityName(String locality);
+}
+
+===RoomRepository.java===
+package com.pg.pg_accommodation.repository;
+
+import java.util.List;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+
+import com.pg.pg_accommodation.entity.Room;
+import com.pg.pg_accommodation.entity.PgPlace;
+import com.pg.pg_accommodation.entity.RoomStatus;
+
+public interface RoomRepository extends JpaRepository<Room, Long> {
+
+    List<Room> findByPgPlaceAndStatus(PgPlace pgPlace, RoomStatus status);
+}
+
+===TenantRepository.java===
+package com.pg.pg_accommodation.repository;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+
+import com.pg.pg_accommodation.entity.Tenant;
+
+public interface TenantRepository extends JpaRepository<Tenant, Long> {
+}
+
+===UserRepository.java===
+package com.pg.pg_accommodation.repository;
+
+import java.util.Optional;
+
+import org.springframework.data.jpa.repository.JpaRepository;
+
+import com.pg.pg_accommodation.entity.User;
+
+public interface UserRepository extends JpaRepository<User, Long> {
+
+    Optional<User> findByEmailAndPassword(String email,String password);
+}
+
+===AuthService.java===
+package com.pg.pg_accommodation.service;
+
+import com.pg.pg_accommodation.dto.*;
+
+public interface AuthService {
+
+    LoginResponseDTO login(LoginRequestDTO request);
+}
+
+===CityService.java===
+package com.pg.pg_accommodation.service;
+
+import com.pg.pg_accommodation.entity.City;
+import com.pg.pg_accommodation.util.ApiResponse;
+
+public interface CityService {
+    ApiResponse<City> addCity(String cityName);
+}
+
+===LocalityService.java===
+package com.pg.pg_accommodation.service;
+
+import com.pg.pg_accommodation.entity.Locality;
+import com.pg.pg_accommodation.util.ApiResponse;
+
+public interface LocalityService {
+    ApiResponse<Locality> addLocality(Long cityId, String localityName);
+}
+
+===OwnerService.java===
+package com.pg.pg_accommodation.service;
+
+import com.pg.pg_accommodation.entity.PgPlace;
+
+import java.util.List;
+
+public interface OwnerService {
+
+    PgPlace addPGPlace(PgPlace pgPlace);
+
+    List<PgPlace> getOwnerPlaces();
+
+    void changeAvailability(Long pgId);
+
+    void deletePGPlace(Long pgId);
+}
+
+===PGService.java===
+package com.pg.pg_accommodation.service;
+
+import com.pg.pg_accommodation.entity.PgPlace;
+
+import java.util.List;
+
+public interface PGService {
+
+    List<PgPlace> getPGsByCity(Long cityId);
+
+    List<PgPlace> getPGsByLocality(String locality);
+
+    PgPlace getPGDetails(Long id);
+
+    Object getOwnerDetailsIfAvailable(Long id);
+}
+
+===RoomService.java===
+package com.pg.pg_accommodation.service;
+
+import com.pg.pg_accommodation.util.ApiResponse;
+
+public interface RoomService {
+
+    ApiResponse<String> bookRoom(Long roomId);
+    ApiResponse<String> vacateRoom(Long roomId);
+}
+
+===TenantService.java===
+package com.pg.pg_accommodation.service;
+
+import com.pg.pg_accommodation.entity.Tenant;
+
+public interface TenantService {
+
+    Tenant registerTenant(Tenant tenant);
+}
+
+===UserService.java===
+package com.pg.pg_accommodation.service;
+
+import com.pg.pg_accommodation.util.ApiResponse;
+
+public interface UserService {
+    ApiResponse<String> login(String email, String password);
+}
+
+===AuthServiceImpl.java===
+package com.pg.pg_accommodation.service.impl;
+
+import org.springframework.stereotype.Service;
+
+import com.pg.pg_accommodation.dto.*;
+import com.pg.pg_accommodation.entity.User;
+import com.pg.pg_accommodation.exception.ResourceNotFoundException;
+import com.pg.pg_accommodation.repository.UserRepository;
+import com.pg.pg_accommodation.service.AuthService;
+
+@Service
+public class AuthServiceImpl implements AuthService {
+
+    private final UserRepository userRepository;
+
+    public AuthServiceImpl(UserRepository userRepository) {
+        this.userRepository = userRepository;
+    }
+
+    @Override
+    public LoginResponseDTO login(LoginRequestDTO request) {
+
+        User user = userRepository
+                .findByEmailAndPassword(request.getEmail(), request.getPassword())
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("Invalid email or password"));
+
+        return new LoginResponseDTO(
+                user.getId(),
+                user.getEmail(),
+                user.getRole()
+        );
+    }
+}
+
+===CityServiceImpl.java===
+package com.pg.pg_accommodation.service.impl;
+
+import org.springframework.stereotype.Service;
+
+import com.pg.pg_accommodation.entity.City;
+import com.pg.pg_accommodation.repository.CityRepository;
+import com.pg.pg_accommodation.service.CityService;
+import com.pg.pg_accommodation.util.ApiResponse;
+
+@Service
+public class CityServiceImpl implements CityService {
+
+    private final CityRepository cityRepository;
+
+    public CityServiceImpl(CityRepository cityRepository) {
+        this.cityRepository = cityRepository;
+    }
+
+    @Override
+    public ApiResponse<City> addCity(String cityName) {
+        City city = new City();
+        city.setName(cityName);
+
+        City saved = cityRepository.save(city);
+
+        return new ApiResponse<>(true, "City added successfully", saved);
+    }
+}
+
+===LocalityServiceImpl.java===
+package com.pg.pg_accommodation.service.impl;
+
+import org.springframework.stereotype.Service;
+
+import com.pg.pg_accommodation.entity.City;
+import com.pg.pg_accommodation.entity.Locality;
+import com.pg.pg_accommodation.repository.CityRepository;
+import com.pg.pg_accommodation.repository.LocalityRepository;
+import com.pg.pg_accommodation.service.LocalityService;
+import com.pg.pg_accommodation.util.ApiResponse;
+
+@Service
+public class LocalityServiceImpl implements LocalityService {
+
+    private final CityRepository cityRepository;
+    private final LocalityRepository localityRepository;
+
+    public LocalityServiceImpl(CityRepository cityRepository,
+                               LocalityRepository localityRepository) {
+        this.cityRepository = cityRepository;
+        this.localityRepository = localityRepository;
+    }
+
+    @Override
+    public ApiResponse<Locality> addLocality(Long cityId, String localityName) {
+
+        City city = cityRepository.findById(cityId)
+                .orElseThrow(() -> new RuntimeException("City not found"));
+
+        Locality locality = new Locality();
+        locality.setName(localityName);
+        locality.setCity(city);
+
+        Locality saved = localityRepository.save(locality);
+
+        return new ApiResponse<>(true, "Locality added successfully", saved);
+    }
+}
+
+===OwnerServiceImpl.java===
+package com.pg.pg_accommodation.service.impl;
+
+import com.pg.pg_accommodation.entity.PgPlace;
+import com.pg.pg_accommodation.exception.ResourceNotFoundException;
+import com.pg.pg_accommodation.repository.PgPlaceRepository;
+import com.pg.pg_accommodation.service.OwnerService;
+import org.springframework.stereotype.Service;
+
+import java.util.List;
+
+@Service
+public class OwnerServiceImpl implements OwnerService {
+
+    private final PgPlaceRepository pgPlaceRepository;
+
+    public OwnerServiceImpl(PgPlaceRepository pgPlaceRepository) {
+        this.pgPlaceRepository = pgPlaceRepository;
+    }
+
+    @Override
+    public PgPlace addPGPlace(PgPlace pgPlace) {
+        return pgPlaceRepository.save(pgPlace);
+    }
+
+    @Override
+    public List<PgPlace> getOwnerPlaces() {
+        return pgPlaceRepository.findAll();
+    }
+
     @Override
     public void changeAvailability(Long pgId) {
         PgPlace pg = pgPlaceRepository.findById(pgId)
                 .orElseThrow(() ->
                         new ResourceNotFoundException("PG Place not found"));
- 
+
         pg.toggleAvailability();
         pgPlaceRepository.save(pg);
     }
 
-clear the error and then we move to next step
+    @Override
+    public void deletePGPlace(Long pgId) {
+        if (!pgPlaceRepository.existsById(pgId)) {
+            throw new ResourceNotFoundException("PG Place not found");
+        }
+        pgPlaceRepository.deleteById(pgId);
+    }
+}
+
+===PGPlaceServiceImpl.java===
+package com.pg.pg_accommodation.service.impl;
+
+import com.pg.pg_accommodation.entity.PgPlace;
+import com.pg.pg_accommodation.exception.ResourceNotFoundException;
+import com.pg.pg_accommodation.exception.PGNotAvailableException;
+import com.pg.pg_accommodation.repository.PgPlaceRepository;
+import com.pg.pg_accommodation.service.PGService;
+import org.springframework.stereotype.Service;
+
+import java.util.List;
+
+@Service
+public class PGPlaceServiceImpl implements PGService {
+
+    private final PgPlaceRepository pgPlaceRepository;
+
+    public PGPlaceServiceImpl(PgPlaceRepository pgPlaceRepository) {
+        this.pgPlaceRepository = pgPlaceRepository;
+    }
+
+    @Override
+    public List<PgPlace> getPGsByCity(Long cityId) {
+        return pgPlaceRepository.findByCityId(cityId);
+    }
+
+    @Override
+    public List<PgPlace> getPGsByLocality(String locality) {
+        return pgPlaceRepository.findByLocalityName(locality);
+    }
+
+    @Override
+    public PgPlace getPGDetails(Long id) {
+        PgPlace pg = pgPlaceRepository.findById(id)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("PG Place not found"));
+
+        pg.incrementVisitorCount();
+        return pgPlaceRepository.save(pg);
+    }
+
+    @Override
+    public Object getOwnerDetailsIfAvailable(Long id) {
+        PgPlace pg = pgPlaceRepository.findById(id)
+                .orElseThrow(() ->
+                        new ResourceNotFoundException("PG Place not found"));
+
+        if (!pg.isAvailable()) {
+            throw new PGNotAvailableException(
+                    "PG is occupied. Owner details cannot be shown");
+        }
+
+        pg.incrementVisitorCount();
+        pgPlaceRepository.save(pg);
+
+        return pg.getOwner();
+    }
+}
+
+===RoomServiceImpl.java===
+package com.pg.pg_accommodation.service.impl;
+
+import org.springframework.stereotype.Service;
+
+import com.pg.pg_accommodation.entity.Room;
+import com.pg.pg_accommodation.entity.RoomStatus;
+import com.pg.pg_accommodation.repository.RoomRepository;
+import com.pg.pg_accommodation.service.RoomService;
+import com.pg.pg_accommodation.util.ApiResponse;
+
+@Service
+public class RoomServiceImpl implements RoomService {
+
+    private final RoomRepository roomRepository;
+
+    public RoomServiceImpl(RoomRepository roomRepository) {
+        this.roomRepository = roomRepository;
+    }
+
+    @Override
+    public ApiResponse<String> bookRoom(Long roomId) {
+
+        Room room = roomRepository.findById(roomId)
+                .orElseThrow(() -> new RuntimeException("Room not found"));
+
+        if (room.getStatus() == RoomStatus.OCCUPIED) {
+            throw new RuntimeException("Room already occupied");
+        }
+
+        room.setStatus(RoomStatus.OCCUPIED);
+        roomRepository.save(room);
+
+        return new ApiResponse<>(true, "Room booked successfully", null);
+    }
+
+    @Override
+    public ApiResponse<String> vacateRoom(Long roomId) {
+
+        Room room = roomRepository.findById(roomId)
+                .orElseThrow(() -> new RuntimeException("Room not found"));
+
+        room.setStatus(RoomStatus.AVAILABLE);
+        roomRepository.save(room);
+
+        return new ApiResponse<>(true, "Room vacated successfully", null);
+    }
+}
+
+===TenantServiceImpl.java===
+package com.pg.pg_accommodation.service.impl;
+
+import com.pg.pg_accommodation.entity.Tenant;
+import com.pg.pg_accommodation.exception.AgeNotValidException;
+import com.pg.pg_accommodation.repository.TenantRepository;
+import com.pg.pg_accommodation.service.TenantService;
+import org.springframework.stereotype.Service;
+
+import java.time.LocalDate;
+import java.time.Period;
+
+@Service
+public class TenantServiceImpl implements TenantService {
+
+    private final TenantRepository tenantRepository;
+
+    public TenantServiceImpl(TenantRepository tenantRepository) {
+        this.tenantRepository = tenantRepository;
+    }
+
+    @Override
+    public Tenant registerTenant(Tenant tenant) {
+
+        int age = Period.between(
+                tenant.getDateOfBirth(),
+                LocalDate.now()).getYears();
+
+        if (age < 18) {
+            throw new AgeNotValidException("Tenant must be at least 18 years old");
+        }
+
+        tenant.setAge(age);
+        return tenantRepository.save(tenant);
+    }
+}
+
+===UserServiceImpl.java===
+package com.pg.pg_accommodation.service.impl;
+
+import org.springframework.stereotype.Service;
+
+import com.pg.pg_accommodation.entity.User;
+import com.pg.pg_accommodation.repository.UserRepository;
+import com.pg.pg_accommodation.service.UserService;
+import com.pg.pg_accommodation.util.ApiResponse;
+
+@Service
+public class UserServiceImpl implements UserService {
+
+    private final UserRepository userRepository;
+
+    public UserServiceImpl(UserRepository userRepository) {
+        this.userRepository = userRepository;
+    }
+
+    @Override
+    public ApiResponse<String> login(String email, String password) {
+
+        User user = userRepository.findByEmailAndPassword(email,password)
+                .orElseThrow(() -> new RuntimeException("Invalid email/Invalid password"));
+
+        return new ApiResponse<>(true,
+                "Login successful. Role: " + user.getRole(),
+                null);
+    }
+}
+
+===AuthController.java===
+package com.pg.pg_accommodation.controller;
+
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import com.pg.pg_accommodation.dto.*;
+import com.pg.pg_accommodation.service.AuthService;
+import com.pg.pg_accommodation.util.ApiResponse;
+
+@RestController
+@RequestMapping("/api/auth")
+public class AuthController {
+
+    private final AuthService authService;
+
+    public AuthController(AuthService authService) {
+        this.authService = authService;
+    }
+
+    @PostMapping("/login")
+    public ResponseEntity<ApiResponse<LoginResponseDTO>> login(
+            @RequestBody LoginRequestDTO request) {
+
+        LoginResponseDTO response = authService.login(request);
+
+        ApiResponse<LoginResponseDTO> apiResponse =
+                new ApiResponse<>(true, "Login successful", response);
+
+        return ResponseEntity.ok(apiResponse);
+    }
+}
+
+===OwnerController.java===
+package com.pg.pg_accommodation.controller;
+
+import com.pg.pg_accommodation.util.ApiResponse;
+import com.pg.pg_accommodation.entity.PgPlace;
+import com.pg.pg_accommodation.service.OwnerService;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+
+@RestController
+@RequestMapping("/owner/places")
+public class OwnerController {
+
+    private final OwnerService ownerService;
+
+    public OwnerController(OwnerService ownerService) {
+        this.ownerService = ownerService;
+    }
+
+    @PostMapping("/add")
+    public ResponseEntity<ApiResponse<PgPlace>> addPlace(
+            @RequestBody PgPlace pgPlace) {
+
+        PgPlace saved = ownerService.addPGPlace(pgPlace);
+
+        return ResponseEntity.ok(
+                new ApiResponse<>(true, "PG Place added successfully", saved)
+        );
+    }
+
+    @GetMapping
+    public ResponseEntity<ApiResponse<List<PgPlace>>> getOwnerPlaces() {
+
+        return ResponseEntity.ok(
+                new ApiResponse<>(true, "Owner PG places fetched",
+                        ownerService.getOwnerPlaces())
+        );
+    }
+
+    @PutMapping("/{id}")
+    public ResponseEntity<ApiResponse<String>> changeStatus(
+            @PathVariable Long id) {
+
+        ownerService.changeAvailability(id);
+
+        return ResponseEntity.ok(
+                new ApiResponse<>(true, "Status updated", null)
+        );
+    }
+
+    @DeleteMapping("/delete/{id}")
+    public ResponseEntity<ApiResponse<String>> deletePlace(
+            @PathVariable Long id) {
+
+        ownerService.deletePGPlace(id);
+
+        return ResponseEntity.ok(
+                new ApiResponse<>(true, "PG Place deleted", null)
+        );
+    }
+}
+
+===PGController.java===
+package com.pg.pg_accommodation.controller;
+
+import com.pg.pg_accommodation.util.ApiResponse;
+import com.pg.pg_accommodation.entity.PgPlace;
+import com.pg.pg_accommodation.service.PGService;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
+
+@RestController
+@RequestMapping("/pg")
+public class PGController {
+
+    private final PGService pgService;
+
+    public PGController(PGService pgService) {
+        this.pgService = pgService;
+    }
+
+    @GetMapping("/{cityId}")
+    public ResponseEntity<ApiResponse<List<PgPlace>>> getByCity(
+            @PathVariable Long cityId) {
+
+        return ResponseEntity.ok(
+                new ApiResponse<>(true, "PGs fetched by city",
+                        pgService.getPGsByCity(cityId))
+        );
+    }
+
+    @GetMapping("/locality/{locality}")
+    public ResponseEntity<ApiResponse<List<PgPlace>>> getByLocality(
+            @PathVariable String locality) {
+
+        return ResponseEntity.ok(
+                new ApiResponse<>(true, "PGs fetched by locality",
+                        pgService.getPGsByLocality(locality))
+        );
+    }
+
+    @GetMapping("/details/{id}")
+    public ResponseEntity<ApiResponse<PgPlace>> getPGDetails(
+            @PathVariable Long id) {
+
+        return ResponseEntity.ok(
+                new ApiResponse<>(true, "PG details fetched",
+                        pgService.getPGDetails(id))
+        );
+    }
+
+    @GetMapping("/owner/{id}")
+    public ResponseEntity<ApiResponse<?>> getOwnerDetails(
+            @PathVariable Long id) {
+
+        return ResponseEntity.ok(
+                new ApiResponse<>(true, "Owner details fetched",
+                        pgService.getOwnerDetailsIfAvailable(id))
+        );
+    }
+}
+===PgPlaceController.java===
+package com.pg.pg_accommodation.controller;
+
+import com.pg.pg_accommodation.entity.Owner;
+import com.pg.pg_accommodation.service.PGService;
+import com.pg.pg_accommodation.util.ApiResponse;
+
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+@RestController
+@RequestMapping("/api/pg")
+public class PgPlaceController {
+
+    private final PGService pgPlaceService;
+
+    public PgPlaceController(PGService pgPlaceService) {
+        this.pgPlaceService = pgPlaceService;
+    }
+
+    @GetMapping("/{pgId}/owner")
+    public ResponseEntity<ApiResponse<Owner>> viewOwner(
+            @PathVariable Long pgId) {
+
+        Owner owner = (Owner)
+                pgPlaceService.getOwnerDetailsIfAvailable(pgId);
+
+        return ResponseEntity.ok(
+                new ApiResponse<>(true, "Owner details fetched", owner)
+        );
+    }
+}
+
+===TenantController.java===
+package com.pg.pg_accommodation.controller;
+
+import com.pg.pg_accommodation.util.ApiResponse;
+import com.pg.pg_accommodation.entity.Tenant;
+import com.pg.pg_accommodation.service.TenantService;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+@RestController
+@RequestMapping("/tenant")
+public class TenantController {
+
+    private final TenantService tenantService;
+
+    public TenantController(TenantService tenantService) {
+        this.tenantService = tenantService;
+    }
+
+    @PostMapping("/register")
+    public ResponseEntity<ApiResponse<Tenant>> registerTenant(
+            @RequestBody Tenant tenant) {
+
+        Tenant savedTenant = tenantService.registerTenant(tenant);
+
+        return ResponseEntity.ok(
+                new ApiResponse<>(true, "Tenant registered successfully", savedTenant)
+        );
+    }
+}
+
+===ApiResponse.java===
+package com.pg.pg_accommodation.util;
+
+public class ApiResponse<T> {
+
+    private boolean success;
+    private String message;
+    private T data;
+	public ApiResponse() {
+		super();
+	}
+	
+	public ApiResponse(boolean success, String message, T data) {
+		super();
+		this.success = success;
+		this.message = message;
+		this.data = data;
+	}
+    public ApiResponse(String message, T data) {
+        this.success = true;
+        this.message = message;
+        this.data = data;
+    }
+
+	public boolean isSuccess() {
+		return success;
+	}
+	public void setSuccess(boolean success) {
+		this.success = success;
+	}
+	public String getMessage() {
+		return message;
+	}
+	public void setMessage(String message) {
+		this.message = message;
+	}
+	public T getData() {
+		return data;
+	}
+	public void setData(T data) {
+		this.data = data;
+	}
+    
+    
+}
+
+===GlobalExceptionHandler.java===
+package com.pg.pg_accommodation.exception;
+
+import com.pg.pg_accommodation.util.ApiResponse;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+@RestControllerAdvice
+public class GlobalExceptionHandler {
+
+    @ExceptionHandler(ResourceNotFoundException.class)
+    public ResponseEntity<ApiResponse<String>> handleNotFound(
+            ResourceNotFoundException ex) {
+
+        return new ResponseEntity<>(
+                new ApiResponse<>(false, ex.getMessage(), null),
+                HttpStatus.NOT_FOUND
+        );
+    }
+
+    @ExceptionHandler(AgeNotValidException.class)
+    public ResponseEntity<ApiResponse<String>> handleAgeException(
+            AgeNotValidException ex) {
+
+        return new ResponseEntity<>(
+                new ApiResponse<>(false, ex.getMessage(), null),
+                HttpStatus.BAD_REQUEST
+        );
+    }
+
+    @ExceptionHandler(LoginFailedException.class)
+    public ResponseEntity<ApiResponse<String>> handleLoginFailed(
+            LoginFailedException ex) {
+
+        return new ResponseEntity<>(
+                new ApiResponse<>(false, ex.getMessage(), null),
+                HttpStatus.UNAUTHORIZED
+        );
+    }
+
+    @ExceptionHandler(PGNotAvailableException.class)
+    public ResponseEntity<ApiResponse<String>> handlePGNotAvailable(
+            PGNotAvailableException ex) {
+
+        return new ResponseEntity<>(
+                new ApiResponse<>(false, ex.getMessage(), null),
+                HttpStatus.FORBIDDEN
+        );
+    }
+
+    @ExceptionHandler(Exception.class)
+    public ResponseEntity<ApiResponse<String>> handleGeneric(
+            Exception ex) {
+
+        return new ResponseEntity<>(
+                new ApiResponse<>(false, "Internal Server Error", null),
+                HttpStatus.INTERNAL_SERVER_ERROR
+        );
+    }
+}
+
+===AgeNotValidException.java===
+package com.pg.pg_accommodation.exception;
+
+public class AgeNotValidException extends RuntimeException {
+
+    public AgeNotValidException(String message) {
+        super(message);
+    }
+}
+
+===LoginFailedException.java===
+package com.pg.pg_accommodation.exception;
+
+public class LoginFailedException extends RuntimeException {
+
+    public LoginFailedException(String message) {
+        super(message);
+    }
+}
+
+===PGNotAvailableException.java===
+package com.pg.pg_accommodation.exception;
+
+public class PGNotAvailableException extends RuntimeException {
+
+    public PGNotAvailableException(String message) {
+        super(message);
+    }
+}
+
+===ResourceNotFoundException.java===
+package com.pg.pg_accommodation.exception;
+
+public class ResourceNotFoundException extends RuntimeException {
+
+    public ResourceNotFoundException(String message) {
+        super(message);
+    }
+}
+
+===LoginRequestDTO.java===
+package com.pg.pg_accommodation.dto;
+
+public class LoginRequestDTO {
+
+    private String email;
+    private String password;
+
+    public LoginRequestDTO() {}
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
+    }
+}
+
+===OwnerRequestDTO.java===
+package com.pg.pg_accommodation.dto;
+
+public class OwnerRequestDTO {
+
+    private String name;
+    private String phone;
+    private String email;
+    private String password;
+
+    public OwnerRequestDTO() {}
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getPhone() {
+        return phone;
+    }
+
+    public void setPhone(String phone) {
+        this.phone = phone;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
+    }
+}
+
+===TenantRequestDTO.java===
+package com.pg.pg_accommodation.dto;
+
+import java.time.LocalDate;
+
+public class TenantRequestDTO {
+
+    private String name;
+    private String phone;
+    private String email;
+    private String password;
+    private LocalDate dateOfBirth;
+
+    public TenantRequestDTO() {}
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public String getPhone() {
+        return phone;
+    }
+
+    public void setPhone(String phone) {
+        this.phone = phone;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
+    }
+
+    public String getPassword() {
+        return password;
+    }
+
+    public void setPassword(String password) {
+        this.password = password;
+    }
+
+    public LocalDate getDateOfBirth() {
+        return dateOfBirth;
+    }
+
+    public void setDateOfBirth(LocalDate dateOfBirth) {
+        this.dateOfBirth = dateOfBirth;
+    }
+}
+
+===LoginResponseDTO.java===
+package com.pg.pg_accommodation.dto;
+
+import com.pg.pg_accommodation.entity.Role;
+
+public class LoginResponseDTO {
+
+    private Long userId;
+    private String email;
+    private Role role;
+
+    public LoginResponseDTO() {}
+
+    public LoginResponseDTO(Long userId, String email, Role role) {
+        this.userId = userId;
+        this.email = email;
+        this.role = role;
+    }
+
+    public Long getUserId() {
+        return userId;
+    }
+
+    public void setUserId(Long userId) {
+        this.userId = userId;
+    }
+
+    public String getEmail() {
+        return email;
+    }
+
+    public void setEmail(String email) {
+        this.email = email;
+    }
+
+    public Role getRole() {
+        return role;
+    }
+
+    public void setRole(Role role) {
+        this.role = role;
+    }
+}
+
+===OwnerResponseDTO.java===
+package com.pg.pg_accommodation.dto;
+
+public class OwnerResponseDTO {
+
+    private Long ownerId;
+    private String name;
+
+    public OwnerResponseDTO() {}
+
+    public OwnerResponseDTO(Long ownerId, String name) {
+        this.ownerId = ownerId;
+        this.name = name;
+    }
+
+    public Long getOwnerId() {
+        return ownerId;
+    }
+
+    public void setOwnerId(Long ownerId) {
+        this.ownerId = ownerId;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+}
+
+===TenantResponseDTO.java===
+package com.pg.pg_accommodation.dto;
+
+public class TenantResponseDTO {
+
+    private Long tenantId;
+    private String name;
+    private int age;
+
+    public TenantResponseDTO() {}
+
+    public TenantResponseDTO(Long tenantId, String name, int age) {
+        this.tenantId = tenantId;
+        this.name = name;
+        this.age = age;
+    }
+
+    public Long getTenantId() {
+        return tenantId;
+    }
+
+    public void setTenantId(Long tenantId) {
+        this.tenantId = tenantId;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public void setName(String name) {
+        this.name = name;
+    }
+
+    public int getAge() {
+        return age;
+    }
+
+    public void setAge(int age) {
+        this.age = age;
+    }
+}
+
+I hope that i gave you the correct code with correct file name. read all the carefully and proceed with next step. if you find any error or need any clarification or need any other file ask me
