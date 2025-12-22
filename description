@@ -31,8 +31,8 @@ The flow and features of the application:
 Technology Specification:
 The following technologies are used in the development of this application:
 ●Spring Tool Suite
-●Java
-●MySQL
+●Java(Eclipse IDE)
+●MySQL(MySQL Workbench)
 ●Spring Data JPA
 ●Spring Rest
 ●Postman
@@ -63,3 +63,6 @@ Sr. No. ---- API ---- Endpoint
 Note:
 1.Do the APIs Functional Testing using Postman.
 2.Create the documentation for these APIs using Swagger.
+
+i need to complete this project as soon as possible, so assest me to complete this project as soon as possible with simple infrastructure. dont add any extra elements unwantedly.
+before generating steps and code , if you need further clarification ask me once you get clarified, then start generating the steps and code to complete
